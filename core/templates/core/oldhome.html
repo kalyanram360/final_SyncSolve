@@ -1,0 +1,250 @@
+
+ 
+
+
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync&Connect | Select Problem</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e3f2fd;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        header {
+            background-color: #0288d1;
+            color: white;
+            padding: 15px;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        main {
+            width: 80%;
+            max-width: 700px;
+            padding: 40px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        select, button, input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        select {
+            background-color: #eef2f7;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #0288d1;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #0277bd;
+        }
+
+        .problem-list, .active-problem-list {
+            padding: 10px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .problem-item, .active-problem-item {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            transition: background 0.2s;
+        }
+
+        .problem-item:hover, .active-problem-item:hover {
+            background-color: #f1f1f1;
+        }
+
+        .loading {
+            display: none;
+            font-size: 18px;
+            color: #0288d1;
+        }
+
+        h3 {
+            text-align: center;
+            color: #0277bd;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <span>Sync&Connect</span>
+    </header>
+
+    <main>
+        <h2>Select a Problem to Solve</h2>
+        <label for="platform">Choose Platform:</label>
+        <select id="platform" onchange="loadProblems()">
+            <option value="LeetCode">LeetCode</option>
+            <option value="HackerRank">HackerRank</option>
+            <option value="Codeforces">Codeforces</option>
+            <option value="Custom">Custom Problem</option> 
+        </select>
+
+        <div id="customProblemContainer" style="display: none;">
+            <label for="customProblem">Enter Problem Number:</label>
+            <input type="number" id="customProblem" placeholder="Enter problem number">
+            <button onclick="handleCustomProblem()">Go to Chat</button>
+        </div>
+        
+        <p class="loading" id="loading">Loading problems...</p>
+        
+        <div class="problem-list" id="problemList"></div>
+
+        <h3>🔥 Problems Being Solved Right Now</h3>
+        <div class="active-problem-list" id="activeProblemList">
+            <p id="noActiveProblems" style="color: gray;">No active problems currently.</p>
+        </div>
+    </main>
+
+    <script>
+        function loadProblems() {
+            const platform = document.getElementById('platform').value;
+            localStorage.setItem('lastSelectedPlatform', platform);
+
+            if (platform === 'Custom') {
+                document.getElementById('customProblemContainer').style.display = 'block';
+                document.getElementById('problemList').innerHTML = '';
+            } else {
+                document.getElementById('customProblemContainer').style.display = 'none';
+                const problemList = document.getElementById('problemList');
+                const loading = document.getElementById('loading');
+                problemList.innerHTML = "";
+                loading.style.display = "block";
+
+                fetch(`/api/problems/${platform}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        loading.style.display = "none";
+                        problemList.innerHTML = ""; 
+                        data.problems
+                            .sort((a, b) => b.usersOnline - a.usersOnline)
+                            .forEach(problem => {
+                                let div = document.createElement("div");
+                                div.classList.add("problem-item");
+                                div.innerHTML = `<span>Problem ${problem.id}</span> <span>👥 ${problem.usersOnline} Online</span>`;
+                                div.onclick = () => window.location.href = `/chat/${problem.id}/`;
+                                problemList.appendChild(div);
+                            });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching problems:', error);
+                        loading.style.display = "none";
+                    });
+            }
+        }
+
+        function handleCustomProblem() {
+            const customProblem = document.getElementById('customProblem').value;
+            if (customProblem) {
+                window.location.href = `/chat/${customProblem}/`;
+            } else {
+                alert("Please enter a valid problem number.");
+            }
+        }
+
+
+        function loadActiveProblems() {
+            fetch(`/api/active_problems/`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("🔥 Received Data:", data);
+
+                    // Fix: Extract the actual problem list
+                    const problemsData = data.active_problems; 
+
+                    if (!problemsData || typeof problemsData !== "object") {
+                        console.error("❌ Invalid data format received:", problemsData);
+                        return;
+                    }
+
+                    const problems = Object.entries(problemsData); 
+                    console.log("📝 Processed Problems:", problems);
+
+                    const activeProblemList = document.getElementById("activeProblemList");
+                    if (!activeProblemList) {
+                        console.error("❌ Element with ID 'activeProblemList' not found!");
+                        return;
+                    }
+
+                    activeProblemList.innerHTML = ""; // Clear previous entries
+
+                    if (problems.length > 0) {
+                        problems.forEach(([problemId, usersOnline]) => {
+                            console.log(`📝 Processing Problem ${problemId}, Users Online:`, usersOnline);
+
+                            if (typeof usersOnline !== "number") {
+                                console.error(`❌ Invalid 'usersOnline' value for problem ${problemId}:`, usersOnline);
+                                return;
+                            }
+
+                            let div = document.createElement("div");
+                            div.classList.add("active-problem-item");
+                            div.innerHTML = `<span>Problem ${problemId}</span> <span>👥 ${usersOnline} Online</span>`;
+                            div.onclick = () => window.location.href = `/chat/${problemId}/`;
+
+                            activeProblemList.appendChild(div);
+                        });
+                    } else {
+                        activeProblemList.innerHTML = `<p style="color: gray;">No active problems currently.</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error fetching active problems:', error);
+                    document.getElementById("activeProblemList").innerHTML = `<p style="color: red;">Error loading active problems.</p>`;
+                });
+        }
+
+
+
+document.addEventListener("DOMContentLoaded", loadActiveProblems);
+setInterval(loadActiveProblems, 5000); // Auto-refresh every 5 seconds
+
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const lastPlatform = localStorage.getItem('lastSelectedPlatform') || "LeetCode";
+            document.getElementById('platform').value = lastPlatform;
+            loadProblems();
+            loadActiveProblems();
+            setInterval(loadActiveProblems, 5000); // Refresh active problems every 5 seconds
+        });
+    </script>
+</body>
+</html>
