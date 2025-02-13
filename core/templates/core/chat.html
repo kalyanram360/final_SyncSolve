@@ -117,7 +117,11 @@
     </style>
     <script>
         var problemId = "{{ problem_id }}";
-        var ws = new WebSocket(`ws://${window.location.host}/ws/chat/${problemId}/`);
+        var ws = new WebSocket(
+    (window.location.protocol === "https:" ? "wss://" : "ws://") +
+    window.location.host +
+    `/ws/chat/${problemId}/`
+);
 
         ws.onmessage = function(event) {
             var data = JSON.parse(event.data);
