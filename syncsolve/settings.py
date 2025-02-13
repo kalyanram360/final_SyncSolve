@@ -27,9 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-tb-3r3ln4dvli$&lko%doqcou2#@h$!ri9%&r8u42uq2jdy)ks'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['https://final_syncsolve.up.railway.app/']
+ALLOWED_HOSTS = ['final_syncsolve.up.railway.app']
 
 
 # Application definition
